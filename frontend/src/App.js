@@ -8,26 +8,26 @@ import AppShell from './components/common/AppShell';
 
 // Auth
 import Login from './pages/Login';
-import Register from './pages/Register';
+// import Register from './pages/Register';
 
 // Customer
-import CustomerDashboard from './pages/customer/Dashboard';
-import TrackShipment from './pages/customer/TrackShipment';
-import MyShipments from './pages/customer/MyShipments';
+// import CustomerDashboard from './pages/customer/Dashboard';
+// import TrackShipment from './pages/customer/TrackShipment';
+// import MyShipments from './pages/customer/MyShipments';
 
 // Dispatcher
-import DispatcherDashboard from  './pages/dispatcher/Dashboard';
-import ManageShipments from './pages/dispatcher/ManageShipments';
+// import DispatcherDashboard from  './pages/dispatcher/Dashboard';
+// import ManageShipments from './pages/dispatcher/ManageShipments';
 
 // Driver
-import DriverDashboard from './pages/driver/Dashboard';
+// import DriverDashboard from './pages/driver/Dashboard';
 
 // Manger
-import ManagerDashboard from './pages/manager/Dashboard';
+// import ManagerDashboard from './pages/manager/Dashboard';
 
 // Shared
-import NotFound from './pages/NotFound';
-import Profile from './pages/Profile';
+// import NotFound from './pages/NotFound';
+// import Profile from './pages/Profile';
 
 function PrivateRoute({ children, roles }) {
     const { user, loading } = useAuth();
@@ -70,12 +70,12 @@ export default function App() {
                     {/* Public */}
                     <Route path="/" element={<Navigate to="/login" replace />} />
                     <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-                    <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+                    {/* <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
                     <Route path="/track" element={<TrackShipment public />} />
-                    <Route path="/track/:trackingId" element={<TrackShipment public />} />
+                    <Route path="/track/:trackingId" element={<TrackShipment public />} /> */}
 
                     {/* Customer */}
-                    <Route path="/customer" element={
+                    {/* <Route path="/customer" element={
                         <PrivateRoute roles={['customer']}>
                             <AppShell />
                         </PrivateRoute>
@@ -84,10 +84,10 @@ export default function App() {
                         <Route path="track" element={<TrackShipment />} />
                         <Route path="shipment" element={<MyShipments />} />
                         <Route path="profile" element={<Profile />} />
-                    </Route>
+                    </Route> */}
 
                     {/* Dispatcher */}
-                    <Route path="/dispatcher" element={
+                    {/* <Route path="/dispatcher" element={
                         <PrivateRoute roles={['dispatcher']}>
                             <AppShell />
                         </PrivateRoute>
@@ -95,20 +95,20 @@ export default function App() {
                         <Route path="dashboard" element={<DispatcherDashboard />} />
                         <Route path="shipments" element={<ManageShipments />} />
                         <Route path="profile" element={<Profile />} />
-                    </Route>
+                    </Route> */}
 
                     {/* Driver */}
-                    <Route path="/driver" element={
+                    {/* <Route path="/driver" element={
                         <PrivateRoute roles={['driver']}>
                             <AppShell />
                         </PrivateRoute>
                     }>
                         <Route path="dashboard" element={<DriverDashboard />} />
                         <Route path="profile" element={<Profile />} />
-                    </Route>
+                    </Route> */}
 
                     {/* Manager */}
-                    <Route path="/manager" element={
+                    {/* <Route path="/manager" element={
                         <PrivateRoute roles={['manager']}>
                             <AppShell />
                         </PrivateRoute>
@@ -117,7 +117,7 @@ export default function App() {
                         <Route path="profile" element={<Profile />} />
                     </Route>
 
-                    <Route path="*" element={<NotFound />} />
+                    <Route path="*" element={<NotFound />} /> */}
 
                 </Routes>
             </BrowserRouter>
