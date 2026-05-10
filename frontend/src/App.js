@@ -8,7 +8,7 @@ import AppShell from './components/common/AppShell';
 
 // Auth
 import Login from './pages/Login';
-// import Register from './pages/Register';
+import Register from './pages/Register';
 
 // Customer
 // import CustomerDashboard from './pages/customer/Dashboard';
@@ -70,8 +70,8 @@ export default function App() {
                     {/* Public */}
                     <Route path="/" element={<Navigate to="/login" replace />} />
                     <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-                    {/* <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-                    <Route path="/track" element={<TrackShipment public />} />
+                    <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+                    {/* <Route path="/track" element={<TrackShipment public />} />
                     <Route path="/track/:trackingId" element={<TrackShipment public />} /> */}
 
                     {/* Customer */}
