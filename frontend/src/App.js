@@ -12,7 +12,7 @@ import Register from './pages/Register';
 
 // Customer
 // import CustomerDashboard from './pages/customer/Dashboard';
-// import TrackShipment from './pages/customer/TrackShipment';
+import TrackShipment from './pages/customer/TrackShipment';
 // import MyShipments from './pages/customer/MyShipments';
 
 // Dispatcher
@@ -71,8 +71,8 @@ export default function App() {
                     <Route path="/" element={<Navigate to="/login" replace />} />
                     <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
                     <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-                    {/* <Route path="/track" element={<TrackShipment public />} />
-                    <Route path="/track/:trackingId" element={<TrackShipment public />} /> */}
+                    <Route path="/track" element={<TrackShipment public />} />
+                    <Route path="/track/:trackingId" element={<TrackShipment public />} />
 
                     {/* Customer */}
                     {/* <Route path="/customer" element={
