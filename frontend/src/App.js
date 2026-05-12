@@ -11,7 +11,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 
 // Customer
-// import CustomerDashboard from './pages/customer/Dashboard';
+import CustomerDashboard from "./pages/customer/Dashboard";
 import TrackShipment from './pages/customer/TrackShipment';
 // import MyShipments from './pages/customer/MyShipments';
 
@@ -34,12 +34,12 @@ function PrivateRoute({ children, roles }) {
     if (loading) return (
         <div className="loading-center" style={{ minHeight: '100vh' }}>
             <div className="spinner" />
-            <span style={{ color: 'var(--text-muted', fontSize: 14 }}>Loading...</span>
+            <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading...</span>
         </div>
     );
     if (!user) 
-        <Navigate to="/login" replace />;
-    if (roles && !roles.includes(user.roles))
+        return <Navigate to="/login" replace />;
+    if (roles && !roles.includes(user.role))
         return <Navigate to={getRoleHome(user.role)} replace />;
     return children;
 }
@@ -57,7 +57,7 @@ export function getRoleHome(role) {
         case 'customer': return '/customer/dashboard';
         case 'dispatcher': return '/dispatcher/dashboard';
         case 'driver': return '/driver/dashboard';
-        case 'manager': return 'manager/dashboard';
+        case 'manager': return '/manager/dashboard';
         default: return '/login';
     }
 }
@@ -75,16 +75,16 @@ export default function App() {
                     <Route path="/track/:trackingId" element={<TrackShipment public />} />
 
                     {/* Customer */}
-                    {/* <Route path="/customer" element={
+                    <Route path="/customer" element={
                         <PrivateRoute roles={['customer']}>
                             <AppShell />
                         </PrivateRoute>
                     }>
                         <Route path="dashboard" element={<CustomerDashboard />} />
-                        <Route path="track" element={<TrackShipment />} />
+                        {/* <Route path="track" element={<TrackShipment />} />
                         <Route path="shipment" element={<MyShipments />} />
-                        <Route path="profile" element={<Profile />} />
-                    </Route> */}
+                        <Route path="profile" element={<Profile />} /> */}
+                    </Route>
 
                     {/* Dispatcher */}
                     {/* <Route path="/dispatcher" element={
