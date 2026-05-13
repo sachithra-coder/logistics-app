@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Topbar from "./Topbar";
+import Sidebar from "./Sidebar";
 // Side bar and top bar
 
 export default function AppShell() {
@@ -16,7 +17,10 @@ export default function AppShell() {
                 />
             )}
 
-            {/* sidebar code */}
+            <Sidebar
+                open={sidebarOpen}
+                onClose={() => sidebarOpen(false)}
+            />
 
             <div className="main-content">
                 <Topbar onMenuClick={() => setSidebarOpen(true)}/>
