@@ -8,15 +8,15 @@ const statusHistorySchema = new mongoose.Schema({
 });
 
 const shipmentSchema = new mongoose.Schema({
-  trackingId: { type: String, unique: true, required: true },
+  trackingId: { type: String, unique: true, sparse: true },
   customer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   driver: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   status: {
     type: String,
-    enum: ['pending', 'assigned', 'picked_up', 'in_transit', 'out_for_delivery', 'delivered', 'failed', 'returned'],
+    enum: ['pending','assigned','picked_up','in_transit','out_for_delivery','delivered','failed','returned'],
     default: 'pending',
   },
-  priority: { type: String, enum: ['standard', 'express', 'urgent'], default: 'standard' },
+  priority: { type: String, enum: ['standard','express','urgent'], default: 'standard' },
   pickup: {
     address: { type: String, required: true },
     city: String,
@@ -53,19 +53,5 @@ const shipmentSchema = new mongoose.Schema({
   distance: { type: Number, default: 0 },
   deliveryTime: Number,
 }, { timestamps: true });
-
-// Auto-generate tracking ID
-shipmentSchema.pre('save', async function (next) {
-  if (!this.trackingId) {
-    const count = await mongoose.model('Shipment').countDocuments();
-    this.trackingId = `LGT${String(count + 1).padStart(6, '0')}`;
-  }
-  // Push to status history on status change
-  if (this.isModified('status')) {
-    this.statusHistory.push({ status: this.status, timestamp: new Date() });
-    if (this.status === 'delivered') this.deliveredAt = new Date();
-  }
-  next();
-});
 
 module.exports = mongoose.model('Shipment', shipmentSchema);

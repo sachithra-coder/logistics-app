@@ -13,11 +13,11 @@ import Register from './pages/Register';
 // Customer
 import CustomerDashboard from "./pages/customer/Dashboard";
 import TrackShipment from './pages/customer/TrackShipment';
-// import MyShipments from './pages/customer/MyShipments';
+import MyShipments from './pages/customer/MyShipments';
 
 // Dispatcher
-// import DispatcherDashboard from  './pages/dispatcher/Dashboard';
-// import ManageShipments from './pages/dispatcher/ManageShipments';
+import DispatcherDashboard from  './pages/dispatcher/Dashboard';
+import ManageShipments from './pages/dispatcher/ManageShipments';
 
 // Driver
 // import DriverDashboard from './pages/driver/Dashboard';
@@ -26,8 +26,8 @@ import TrackShipment from './pages/customer/TrackShipment';
 // import ManagerDashboard from './pages/manager/Dashboard';
 
 // Shared
-// import NotFound from './pages/NotFound';
-// import Profile from './pages/Profile';
+import NotFound from './pages/NotFound';
+import Profile from './pages/Profile';
 
 function PrivateRoute({ children, roles }) {
     const { user, loading } = useAuth();
@@ -81,13 +81,13 @@ export default function App() {
                         </PrivateRoute>
                     }>
                         <Route path="dashboard" element={<CustomerDashboard />} />
-                        {/* <Route path="track" element={<TrackShipment />} />
-                        <Route path="shipment" element={<MyShipments />} />
-                        <Route path="profile" element={<Profile />} /> */}
+                        <Route path="track" element={<TrackShipment />} />
+                        <Route path="shipments" element={<MyShipments />} />
+                        <Route path="profile" element={<Profile />} />
                     </Route>
 
                     {/* Dispatcher */}
-                    {/* <Route path="/dispatcher" element={
+                    <Route path="/dispatcher" element={
                         <PrivateRoute roles={['dispatcher']}>
                             <AppShell />
                         </PrivateRoute>
@@ -95,7 +95,7 @@ export default function App() {
                         <Route path="dashboard" element={<DispatcherDashboard />} />
                         <Route path="shipments" element={<ManageShipments />} />
                         <Route path="profile" element={<Profile />} />
-                    </Route> */}
+                    </Route>
 
                     {/* Driver */}
                     {/* <Route path="/driver" element={
@@ -115,9 +115,9 @@ export default function App() {
                     }>
                         <Route path="dashboard" element={<ManagerDashboard />} />
                         <Route path="profile" element={<Profile />} />
-                    </Route>
+                    </Route> */}
 
-                    <Route path="*" element={<NotFound />} /> */}
+                    <Route path="*" element={<NotFound />} />
 
                 </Routes>
             </BrowserRouter>

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { protect } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/auth');
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE || '7d' });
@@ -42,9 +42,33 @@ router.put('/profile', protect, async (req, res) => {
   try {
     const { name, phone, notificationPreferences } = req.body;
     const user = await User.findByIdAndUpdate(
-      req.user._id, { name, phone, notificationPreferences }, { new: true }
+      req.user._id,
+      { name, phone, notificationPreferences },
+      { new: true }
     );
     res.json({ user });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/auth/customers?q=searchterm  — dispatcher searches for customers
+router.get('/customers', protect, authorize('dispatcher', 'manager'), async (req, res) => {
+  try {
+    const q = req.query.q || '';
+    if (!q.trim()) return res.json({ customers: [] });
+
+    const customers = await User.find({
+      role: 'customer',
+      isActive: true,
+      $or: [
+        { name:  { $regex: q, $options: 'i' } },
+        { email: { $regex: q, $options: 'i' } },
+        { phone: { $regex: q, $options: 'i' } },
+      ],
+    }).select('name email phone').limit(10);
+
+    res.json({ customers });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -54,10 +78,10 @@ router.put('/profile', protect, async (req, res) => {
 router.post('/seed', async (req, res) => {
   try {
     const demos = [
-      { name: 'Sarah (Manager)', email: 'manager@demo.com', password: 'demo1234', role: 'manager', phone: '+1234567890' },
-      { name: 'Alex (Dispatcher)', email: 'dispatcher@demo.com', password: 'demo1234', role: 'dispatcher', phone: '+1234567891' },
-      { name: 'John (Driver)', email: 'driver@demo.com', password: 'demo1234', role: 'driver', phone: '+1234567892', vehicleNumber: 'VH-001' },
-      { name: 'Emma (Customer)', email: 'customer@demo.com', password: 'demo1234', role: 'customer', phone: '+1234567893' },
+      { name: 'Sarah (Manager)',    email: 'manager@demo.com',    password: 'demo1234', role: 'manager',    phone: '+94771234567' },
+      { name: 'Alex (Dispatcher)', email: 'dispatcher@demo.com', password: 'demo1234', role: 'dispatcher', phone: '+94771234568' },
+      { name: 'John (Driver)',     email: 'driver@demo.com',     password: 'demo1234', role: 'driver',     phone: '+94771234569', vehicleNumber: 'VH-001' },
+      { name: 'Emma (Customer)',   email: 'customer@demo.com',   password: 'demo1234', role: 'customer',   phone: '+94771234570' },
     ];
     const created = [];
     for (const d of demos) {

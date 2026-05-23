@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Shipment = require('../models/Shipment');
 const Notification = require('../models/Notification');
+const User = require('../models/User');
 const { protect, authorize } = require('../middleware/auth');
 
 // GET /api/shipments - list (role-based)
@@ -23,12 +24,12 @@ router.get('/', protect, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// GET /api/shipments/track/:trackingId - public tracking
+// GET /api/shipments/track/:trackingId - public tracking (no auth required)
 router.get('/track/:trackingId', async (req, res) => {
   try {
     const shipment = await Shipment.findOne({ trackingId: req.params.trackingId.toUpperCase() })
       .populate('driver', 'name phone currentLocation vehicleNumber');
-    if (!shipment) return res.status(404).json({ message: 'Shipment not found' });
+    if (!shipment) return res.status(404).json({ message: 'Shipment not found. Please check your tracking ID.' });
     res.json({ shipment });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
@@ -48,10 +49,43 @@ router.get('/:id', protect, async (req, res) => {
 router.post('/', protect, authorize('dispatcher', 'manager', 'customer'), async (req, res) => {
   try {
     const data = { ...req.body };
-    if (req.user.role === 'customer') data.customer = req.user._id;
+
+    // Assign customer
+    if (req.user.role === 'customer') {
+      data.customer = req.user._id;
+    } else if (!data.customer) {
+      // Dispatcher/manager: try to find customer by email, else use themselves as placeholder
+      if (data.customerEmail) {
+        const customer = await User.findOne({ email: data.customerEmail, role: 'customer' });
+        if (customer) {
+          data.customer = customer._id;
+        } else {
+          // Create a guest reference using dispatcher's id as fallback
+          data.customer = req.user._id;
+        }
+      } else {
+        // No customer specified — use dispatcher as owner (for demo purposes)
+        data.customer = req.user._id;
+      }
+    }
+
+    // Auto-generate trackingId if not present
+    if (!data.trackingId) {
+      const count = await Shipment.countDocuments();
+      data.trackingId = `LGT${String(count + 1).padStart(6, '0')}`;
+    }
+
+    // Set initial status history
+    data.statusHistory = [{ status: 'pending', timestamp: new Date() }];
+
     const shipment = await Shipment.create(data);
-    res.status(201).json({ shipment });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+    const populated = await Shipment.findById(shipment._id)
+      .populate('customer', 'name email phone')
+      .populate('driver', 'name phone vehicleNumber');
+    res.status(201).json({ shipment: populated });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 // PATCH /api/shipments/:id/status - update status (driver/dispatcher)
@@ -60,21 +94,30 @@ router.patch('/:id/status', protect, authorize('driver', 'dispatcher', 'manager'
     const { status, note, location } = req.body;
     const shipment = await Shipment.findById(req.params.id).populate('customer', 'name email');
     if (!shipment) return res.status(404).json({ message: 'Not found' });
+
     shipment.status = status;
-    if (note) shipment.statusHistory[shipment.statusHistory.length - 1].note = note;
-    if (location) {
-      shipment.currentLocation = location;
-      shipment.statusHistory[shipment.statusHistory.length - 1].location = location;
-    }
+
+    const historyEntry = { status, timestamp: new Date() };
+    if (note) historyEntry.note = note;
+    if (location) historyEntry.location = location;
+    shipment.statusHistory.push(historyEntry);
+
+    if (location) shipment.currentLocation = location;
+    if (status === 'delivered') shipment.deliveredAt = new Date();
+
     await shipment.save();
+
     // Notify customer
-    await Notification.create({
-      recipient: shipment.customer._id,
-      shipment: shipment._id,
-      type: 'status_update',
-      title: `Shipment ${status.replace(/_/g, ' ')}`,
-      message: `Your shipment ${shipment.trackingId} is now ${status.replace(/_/g, ' ')}.${note ? ' ' + note : ''}`,
-    });
+    if (shipment.customer?._id) {
+      await Notification.create({
+        recipient: shipment.customer._id,
+        shipment: shipment._id,
+        type: 'status_update',
+        title: `Shipment ${status.replace(/_/g, ' ')}`,
+        message: `Your shipment ${shipment.trackingId} is now ${status.replace(/_/g, ' ')}.${note ? ' ' + note : ''}`,
+      });
+    }
+
     req.io?.to('customer').emit('shipment_update', { trackingId: shipment.trackingId, status });
     req.io?.to('dispatcher').emit('delivery_status_changed', { shipmentId: shipment._id, status });
     res.json({ shipment });
@@ -103,7 +146,9 @@ router.patch('/:id/location', protect, authorize('driver'), async (req, res) => 
   try {
     const { lat, lng } = req.body;
     await Shipment.findByIdAndUpdate(req.params.id, { currentLocation: { lat, lng } });
-    req.io?.to('dispatcher').emit('driver_location_update', { shipmentId: req.params.id, lat, lng, driverId: req.user._id });
+    req.io?.to('dispatcher').emit('driver_location_update', {
+      shipmentId: req.params.id, lat, lng, driverId: req.user._id
+    });
     req.io?.to('customer').emit('shipment_location', { shipmentId: req.params.id, lat, lng });
     res.json({ success: true });
   } catch (err) { res.status(500).json({ message: err.message }); }

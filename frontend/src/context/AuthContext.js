@@ -10,12 +10,12 @@ export function AuthProvider({ children }) {
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
-            api.get('/auth/me')
-                .then(res => setUser(res.data.user))
-                .catch(() => localStorage.removeItem('token'))
-                .finally(() => setLoading(false));
+        api.get('/auth/me')
+            .then(res => setUser(res.data.user))
+            .catch(() => localStorage.removeItem('token'))
+            .finally(() => setLoading(false));
         } else {
-            setLoading(false);
+        setLoading(false);
         }
     }, []);
 
@@ -33,14 +33,14 @@ export function AuthProvider({ children }) {
         return res.data.user;
     };
 
-    const logOut = () => {
+    const logout = () => {
         localStorage.removeItem('token');
         setUser(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, register, logOut }}>
-            {children}
+        <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+        {children}
         </AuthContext.Provider>
     );
 }

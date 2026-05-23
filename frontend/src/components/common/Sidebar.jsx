@@ -1,20 +1,33 @@
-import React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import React from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const NAV_CONFIG = {
-    customer : [
-        { to: '/customer/dashboard', icon: '🏠', label: 'Dashboard'},
+    customer: [
+        { to: '/customer/dashboard', icon: '🏠', label: 'Dashboard' },
         { to: '/customer/track',     icon: '📍', label: 'Track Shipment' },
         { to: '/customer/shipments', icon: '📦', label: 'My Shipments' },
-    ]
+    ],
+    dispatcher: [
+        { to: '/dispatcher/dashboard', icon: '🗺️', label: 'Live Dashboard' },
+        { to: '/dispatcher/shipments', icon: '📋', label: 'Manage Shipments' },
+    ],
+    driver: [
+        { to: '/driver/dashboard', icon: '🚚', label: 'My Deliveries' },
+    ],
+    manager: [
+        { to: '/manager/dashboard', icon: '📊', label: 'Reports & Analytics' },
+    ],
 };
 
 const ROLE_COLORS = {
-    customer: 'var(--accent)'
+    customer:   'var(--accent)',
+    dispatcher: 'var(--blue-light)',
+    driver:     'var(--success)',
+    manager:    '#a78bfa',
 };
 
-export default function Sidebar({ open, onClose, unreadCount=0}) {
+export default function Sidebar({ open, onClose, unreadCount = 0 }) {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const navItems = NAV_CONFIG[user?.role] || [];
@@ -23,29 +36,29 @@ export default function Sidebar({ open, onClose, unreadCount=0}) {
 
     const handleLogout = () => {
         logout();
-        navigate('/login')
+        navigate('/login');
     };
 
-    return(
-        <aside className={`sidebar${open ? ' open': ''}`}>
-            {/* Logo */}
+    return (
+        <aside className={`sidebar${open ? ' open' : ''}`}>
+        {/* Logo */}
             <div className="sidebar-logo">
                 <div className="sidebar-logo-icon">🚚</div>
                 <div className="sidebar-logo-text">Logi<span>Track</span></div>
+                {/* Mobile close */}
                 <button
-                onClick={onClose}
+                    onClick={onClose}
                     style={{
                         marginLeft: 'auto', background: 'none', border: 'none',
                         color: 'rgba(255,255,255,0.4)', fontSize: 20, cursor: 'pointer',
                         padding: '2px 6px', borderRadius: 6, display: 'none',
-                    }}
+                }}
                     className="sidebar-close-btn"
-                    >✕
-                </button>
+                >✕</button>
             </div>
 
-            {/* Role bagde */}
-            <div style={{ padding: '12px 20px 8px'}}>
+            {/* Role badge */}
+            <div style={{ padding: '12px 20px 8px' }}>
                 <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     background: 'rgba(255,255,255,0.07)',
@@ -100,11 +113,12 @@ export default function Sidebar({ open, onClose, unreadCount=0}) {
                     <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>→</span>
                 </div>
             </div>
+
             <style>{`
                 @media (max-width: 900px) {
                 .sidebar-close-btn { display: flex !important; }
                 }
             `}</style>
         </aside>
-    )
+    );
 }
