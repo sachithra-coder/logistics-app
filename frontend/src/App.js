@@ -20,7 +20,7 @@ import DispatcherDashboard from  './pages/dispatcher/Dashboard';
 import ManageShipments from './pages/dispatcher/ManageShipments';
 
 // Driver
-// import DriverDashboard from './pages/driver/Dashboard';
+import DriverDashboard from './pages/driver/Dashboard';
 
 // Manger
 // import ManagerDashboard from './pages/manager/Dashboard';
@@ -98,14 +98,14 @@ export default function App() {
                     </Route>
 
                     {/* Driver */}
-                    {/* <Route path="/driver" element={
+                    <Route path="/driver" element={
                         <PrivateRoute roles={['driver']}>
                             <AppShell />
                         </PrivateRoute>
                     }>
                         <Route path="dashboard" element={<DriverDashboard />} />
                         <Route path="profile" element={<Profile />} />
-                    </Route> */}
+                    </Route>
 
                     {/* Manager */}
                     {/* <Route path="/manager" element={
