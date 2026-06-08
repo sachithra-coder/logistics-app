@@ -26,14 +26,14 @@ export default function Topbar({ onMenuClick }) {
   const [showNotif, setShowNotif] = useState(false);
   const notifRef = useRef(null);
 
-  const pageInfo = PAGE_TITLES[location.pathname] || { title: 'LogiTrack', icon: '🚚'}
+  const pageInfo = PAGE_TITLES[location.pathname] || { title: 'LogiTrack', icon: '🚚' };
 
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, []);
-    
+
   const fetchNotifications = async () => {
     try {
       const res = await api.get('/notifications');
@@ -41,7 +41,7 @@ export default function Topbar({ onMenuClick }) {
       setUnread(res.data.unread || 0);
     } catch {}
   };
-    
+
   const markRead = async (id) => {
     try {
       await api.patch(`/notifications/${id}/read`);
@@ -49,7 +49,7 @@ export default function Topbar({ onMenuClick }) {
       setUnread(u => Math.max(0, u - 1));
     } catch {}
   };
-    
+
   const markAllRead = async () => {
     try {
       await api.patch('/notifications/read-all');
@@ -57,7 +57,7 @@ export default function Topbar({ onMenuClick }) {
       setUnread(0);
     } catch {}
   };
-    
+
   // Close notif panel on outside click
   useEffect(() => {
     const handler = (e) => {
