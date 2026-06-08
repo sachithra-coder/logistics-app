@@ -50,7 +50,7 @@ io.on('connection', (socket) => {
 });
 
 // Connect to MongoDB and start server
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5002;
 mongoose
   .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/logistics')
   .then(() => {
