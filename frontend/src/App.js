@@ -23,7 +23,7 @@ import ManageShipments from './pages/dispatcher/ManageShipments';
 import DriverDashboard from './pages/driver/Dashboard';
 
 // Manger
-// import ManagerDashboard from './pages/manager/Dashboard';
+import ManagerDashboard from './pages/manager/Dashboard';
 
 // Shared
 import NotFound from './pages/NotFound';
@@ -108,14 +108,14 @@ export default function App() {
                     </Route>
 
                     {/* Manager */}
-                    {/* <Route path="/manager" element={
+                    <Route path="/manager" element={
                         <PrivateRoute roles={['manager']}>
                             <AppShell />
                         </PrivateRoute>
                     }>
                         <Route path="dashboard" element={<ManagerDashboard />} />
                         <Route path="profile" element={<Profile />} />
-                    </Route> */}
+                    </Route>
 
                     <Route path="*" element={<NotFound />} />
 
