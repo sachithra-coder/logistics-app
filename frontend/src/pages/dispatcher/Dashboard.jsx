@@ -4,379 +4,618 @@ import { io } from 'socket.io-client';
 import { formatDistanceToNow } from 'date-fns';
 
 const STATUS_META = {
-    pending:          { label: 'Pending',         cls: 'badge-pending' },
-    assigned:         { label: 'Assigned',         cls: 'badge-assigned' },
-    picked_up:        { label: 'Picked Up',        cls: 'badge-picked_up' },
-    in_transit:       { label: 'In Transit',       cls: 'badge-in_transit' },
-    out_for_delivery: { label: 'Out for Delivery', cls: 'badge-out_for_delivery' },
-    delivered:        { label: 'Delivered',        cls: 'badge-delivered' },
-    failed:           { label: 'Failed',           cls: 'badge-failed' },
-    returned:         { label: 'Returned',         cls: 'badge-returned' },
+  pending:          { label: 'Pending',         cls: 'badge-pending' },
+  assigned:         { label: 'Assigned',         cls: 'badge-assigned' },
+  picked_up:        { label: 'Picked Up',        cls: 'badge-picked_up' },
+  in_transit:       { label: 'In Transit',       cls: 'badge-in_transit' },
+  out_for_delivery: { label: 'Out for Delivery', cls: 'badge-out_for_delivery' },
+  delivered:        { label: 'Delivered',        cls: 'badge-delivered' },
+  failed:           { label: 'Failed',           cls: 'badge-failed' },
+  returned:         { label: 'Returned',         cls: 'badge-returned' },
 };
 
-// Customer search component
-function CustomerSearch({ value, onChange}) {
-    const [query, setQuery]       = useState('');
-    const [results, setResults]   = useState([]);
-    const [searching, setSearching] = useState(false);
-    const [showDrop, setShowDrop] = useState(false);
-    const debounceRef = useRef(null);
+// ─── Customer Search Component ───────────────────────────────────────────────
+function CustomerSearch({ value, onChange }) {
+  const [query, setQuery]       = useState('');
+  const [results, setResults]   = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [showDrop, setShowDrop] = useState(false);
+  const debounceRef = useRef(null);
 
-    const search = (q) => {
-        setQuery(q);
-        if (value) onChange(null); // clear selection when typing again
-        if (!q.trim()) { 
-            setResults([]); 
-            setShowDrop(false); 
-            return; 
-        }
-        clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(async () => {
-            setSearching(true);
-            try {
-                const res = await api.get(`/auth/customers?q=${encodeURIComponent(q)}`);
-                setResults(res.data.customers || []);
-                setShowDrop(true);
-            } catch { 
-                setResults([]); 
-            }
-            finally { 
-                setSearching(false); 
-            }
-        }, 400);
-    };
+  const search = (q) => {
+    setQuery(q);
+    if (value) onChange(null); // clear selection when typing again
+    if (!q.trim()) { setResults([]); setShowDrop(false); return; }
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await api.get(`/auth/customers?q=${encodeURIComponent(q)}`);
+        setResults(res.data.customers || []);
+        setShowDrop(true);
+      } catch { setResults([]); }
+      finally { setSearching(false); }
+    }, 400);
+  };
 
-    const select = (customer) => {
-        onChange(customer);
-        setQuery(customer.name + ' — ' + customer.email);
-        setShowDrop(false);
-    };
+  const select = (customer) => {
+    onChange(customer);
+    setQuery(customer.name + ' — ' + customer.email);
+    setShowDrop(false);
+  };
 
-    return (
-        <div style={{ position: 'relative'}}>
-            <input
-                className="form-control"
-                placeholder="Search by name or email…"
-                value={query}
-                onChange={e => search(e.target.value)}
-                onFocus={() => results.length > 0 && setShowDrop(true)}
-                autoComplete="off"
-            />
-            {searching && (
-                <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)' }}>
-                    <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
-                </div>
-            )}
-            {showDrop && results.length > 0 && (
-                <div style={{
-                    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
-                    background: 'var(--bg-card)', border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow-lg)',
-                    maxHeight: 200, overflowY: 'auto', marginTop: 4,
-                }}>
-                    {results.map(c => (
-                        <div key={c._id}
-                            onClick={() => select(c)}
-                            style={{
-                                padding: '10px 14px', cursor: 'pointer', fontSize: 14,
-                                borderBottom: '1px solid var(--border)', transition: 'background 0.15s',
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'var(--bg)'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                        >
-                            <div style={{ fontWeight: 600 }}>{c.name}</div>
-                            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.email} · {c.phone || 'No phone'}</div>
-                        </div>
-                    ))}
-                </div>
-            )}
-            {showDrop && results.length === 0 && !searching && query.length > 1 && (
-                <div style={{
-                    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
-                    background: 'var(--bg-card)', border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow)', marginTop: 4,
-                    padding: '12px 14px', fontSize: 13, color: 'var(--text-muted)',
-                }}>
-                    No customers found. Ask them to register first.
-                </div>
-            )}
-            {value && (
-                <div style={{
-                    marginTop: 8, padding: '8px 12px',
-                    background: 'rgba(6,214,160,0.08)', border: '1px solid rgba(6,214,160,0.2)',
-                    borderRadius: 'var(--radius-sm)', fontSize: 13,
-                    display: 'flex', alignItems: 'center', gap: 8,
-                }}>
-                    <span style={{ color: 'var(--success)', fontSize: 16 }}>✓</span>
-                    <div>
-                        <span style={{ fontWeight: 700 }}>{value.name}</span>
-                        <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>{value.email}</span>
-                    </div>
-                    <button onClick={() => { onChange(null); setQuery(''); }}
-                        style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 16 }}>✕</button>
-                </div>
-            )}
+  return (
+    <div style={{ position: 'relative' }}>
+      <input
+        className="form-control"
+        placeholder="Search by name or email…"
+        value={query}
+        onChange={e => search(e.target.value)}
+        onFocus={() => results.length > 0 && setShowDrop(true)}
+        autoComplete="off"
+      />
+      {searching && (
+        <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)' }}>
+          <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
         </div>
-    );
+      )}
+      {showDrop && results.length > 0 && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow-lg)',
+          maxHeight: 200, overflowY: 'auto', marginTop: 4,
+        }}>
+          {results.map(c => (
+            <div key={c._id}
+              onClick={() => select(c)}
+              style={{
+                padding: '10px 14px', cursor: 'pointer', fontSize: 14,
+                borderBottom: '1px solid var(--border)', transition: 'background 0.15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <div style={{ fontWeight: 600 }}>{c.name}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.email} · {c.phone || 'No phone'}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {showDrop && results.length === 0 && !searching && query.length > 1 && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow)', marginTop: 4,
+          padding: '12px 14px', fontSize: 13, color: 'var(--text-muted)',
+        }}>
+          No customers found. Ask them to register first.
+        </div>
+      )}
+      {value && (
+        <div style={{
+          marginTop: 8, padding: '8px 12px',
+          background: 'rgba(6,214,160,0.08)', border: '1px solid rgba(6,214,160,0.2)',
+          borderRadius: 'var(--radius-sm)', fontSize: 13,
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <span style={{ color: 'var(--success)', fontSize: 16 }}>✓</span>
+          <div>
+            <span style={{ fontWeight: 700 }}>{value.name}</span>
+            <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>{value.email}</span>
+          </div>
+          <button onClick={() => { onChange(null); setQuery(''); }}
+            style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 16 }}>✕</button>
+        </div>
+      )}
+    </div>
+  );
 }
 
-// Main dashboard
-export default function DispatcherDashboard(){
-    const [shipments, setShipments]   = useState([]);
-    const [drivers, setDrivers]       = useState([]);
-    const [loading, setLoading]       = useState(true);
-    const [selected, setSelected]     = useState(null);
-    const [showNew, setShowNew]       = useState(false);
-    const [filter, setFilter]         = useState('pending');
-    const [driverLocs, setDriverLocs] = useState({});
-    const [toast, setToast]           = useState('');
-    const socketRef = useRef(null);
+// ─── New Shipment Modal ───────────────────────────────────────────────────────
+function NewShipmentModal({ onClose, onSuccess }) {
+  const [customer, setCustomer] = useState(null);
+  const [form, setForm] = useState({
+    pickupAddress: '', pickupCity: '', pickupContactName: '', pickupContactPhone: '',
+    deliveryAddress: '', deliveryCity: '', deliveryContactName: '', deliveryContactPhone: '',
+    deliveryInstructions: '',
+    description: '', weight: '', priority: 'standard', scheduledDate: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
 
-    const load = async () => {
-        setLoading(true);
-        try {
-          const [sRes, dRes] = await Promise.all([
-            api.get('/shipments?limit=50'),
-            api.get('/drivers'),
-          ]);
-          setShipments(sRes.data.shipments || []);
-          setDrivers(dRes.data.drivers || []);
-        } catch {}
-        setLoading(false);
-    };
+  const handle = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
-    useEffect(() => {
-        load();
-        const socket = io(process.env.REACT_APP_SOCKET_URL || window.location.origin);
-        socketRef.current = socket;
-        socket.emit('join_role', 'dispatcher');
-        socket.on('driver_location_update', data => {
-          setDriverLocs(prev => ({ ...prev, [data.driverId]: { lat: data.lat, lng: data.lng, name: data.driverName } }));
-        });
-        socket.on('delivery_status_changed', () => load());
-        return () => socket.disconnect();
-    }, []);
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!customer) { setError('Please select a customer.'); return; }
+    setLoading(true); setError('');
+    try {
+      await api.post('/shipments', {
+        customer: customer._id,
+        pickup: {
+          address: form.pickupAddress,
+          city: form.pickupCity,
+          contactName: form.pickupContactName,
+          contactPhone: form.pickupContactPhone,
+        },
+        delivery: {
+          address: form.deliveryAddress,
+          city: form.deliveryCity,
+          contactName: form.deliveryContactName,
+          contactPhone: form.deliveryContactPhone,
+          instructions: form.deliveryInstructions,
+        },
+        packageDetails: {
+          description: form.description,
+          weight: parseFloat(form.weight) || 0,
+        },
+        priority: form.priority,
+        scheduledDate: form.scheduledDate || undefined,
+      });
+      onSuccess();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create shipment.');
+    } finally { setLoading(false); }
+  };
 
-    const showToast = (msg) => { 
-        setToast(msg); 
-        setTimeout(() => setToast(''), 3500); 
-    };
-    const onAssigned = () => { 
-        setSelected(null); 
-        load(); 
-        showToast('✅ Driver assigned successfully.'); 
-    };
-    const onCreated  = () => { 
-        setShowNew(false); 
-        load(); showToast('✅ Shipment created successfully.'); 
-    };
-
-    const unassign = async (shipmentId) => {
-        if (!window.confirm('Unassign this driver?')) return;
-        try { 
-            await api.delete(`/assignments/${shipmentId}`); 
-            load(); 
-            showToast('Driver unassigned.'); 
-        } catch {}
-    };
-
-    const filters = [
-        { key: 'all',      label: 'All' },
-        { key: 'pending',  label: 'Pending' },
-        { key: 'assigned', label: 'Assigned' },
-        { key: 'active',   label: 'In Transit' },
-        { key: 'done',     label: 'Completed' },
-    ];
-
-    const filtered = shipments.filter(s => {
-        if (filter === 'pending'  && s.status !== 'pending') return false;
-        if (filter === 'assigned' && s.status !== 'assigned') return false;
-        if (filter === 'active'   && !['picked_up','in_transit','out_for_delivery'].includes(s.status)) return false;
-        if (filter === 'done'     && !['delivered','failed','returned'].includes(s.status)) return false;
-        return true;
-    });
-
-    const stats = {
-        pending: shipments.filter(s => s.status === 'pending').length,
-        active:  shipments.filter(s => ['in_transit','out_for_delivery','picked_up'].includes(s.status)).length,
-        done:    shipments.filter(s => s.status === 'delivered').length,
-        drivers: drivers.filter(d => d.isAvailable).length,
-    };
-
-    return(
-        <div className='animate-fadeIn'>
-            {toast && (
-                <div className="alert alert-success" style={{ marginBottom: 20, position: 'sticky', top: 0, zIndex: 10 }}>
-                {toast}
-                </div>
-            )}
-
-            {/* Stats */}
-            <div className="stat-grid" style={{ marginBottom: 24 }}>
-                {[
-                    { icon: '⏳', label: 'Pending',          value: stats.pending, color: 'amber' },
-                    { icon: '🚚', label: 'In Transit',        value: stats.active,  color: 'blue' },
-                    { icon: '✅', label: 'Delivered today',   value: stats.done,    color: 'green' },
-                    { icon: '👤', label: 'Available drivers', value: stats.drivers, color: 'purple' },
-                ].map(s => (
-                    <div key={s.label} className="stat-card">
-                        <div className={`stat-icon ${s.color}`} style={{ fontSize: 24 }}>{s.icon}</div>
-                        <div><div className="stat-value">{s.value}</div><div className="stat-label">{s.label}</div></div>
-                    </div>
-                ))}
-            </div>
-
-            {/* Live drivers */}
-            {Object.keys(driverLocs).length > 0 && (
-                <div className="card card-padded" style={{ marginBottom: 24 }}>
-                    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 15, marginBottom: 14 }}>🟢 Drivers Online</h3>
-                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                        {Object.entries(driverLocs).map(([id, loc]) => (
-                            <div key={id} style={{
-                                background: 'rgba(6,214,160,0.07)', border: '1px solid rgba(6,214,160,0.2)',
-                                borderRadius: 'var(--radius-sm)', padding: '8px 14px', fontSize: 13,
-                            }}>
-                                <span style={{ fontWeight: 700 }}>{loc.name || 'Driver'}</span>
-                                <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>
-                                    GPS: {loc.lat?.toFixed(4)}, {loc.lng?.toFixed(4)}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Shipments */}
-            <div className='card'>
-                <div className="card-header" style={{ flexWrap: 'wrap', gap: 12 }}>
-                    <span className="card-title">Shipments ({filtered.length})</span>
-                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <div className="tabs">
-                            {filters.map(f => (
-                                <button key={f.key} className={`tab${filter === f.key ? ' active' : ''}`} onClick={() => setFilter(f.key)}>
-                                    {f.label}
-                                </button>
-                            ))}
-                        </div>
-                        <button className="btn btn-primary btn-sm" onClick={() => setShowNew(true)}>+ New Shipment</button>
-                    </div>
-                </div>
-
-                {loading ? (
-                    <div className="loading-center"><div className="spinner" /></div>
-                ): filtered.length === 0 ? (
-                    <div className="empty-state">
-                        <div className="empty-icon">📋</div>
-                        <div className="empty-title">No shipments</div>
-                        <div className="empty-sub">
-                        {filter === 'pending' ? 'No pending shipments. Create one with "+ New Shipment".' : 'No shipments match this filter.'}
-                        </div>
-                    </div>
-                )   :   (
-                    <>  
-                        {/* Mobile */}
-                        <div className="mobile-dispatch" style={{ display: 'none' }}>
-                            {filtered.map(s => {
-                                const meta = STATUS_META[s.status] || { label: s.status, cls: '' };
-                                return (
-                                    <div key={s._id} className="delivery-card-mobile" style={{ margin: '0 16px 12px' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                                            <code style={{ fontWeight: 700, color: 'var(--blue)', fontSize: 14 }}>{s.trackingId}</code>
-                                            <span className={`badge ${meta.cls}`}>{meta.label}</span>
-                                        </div>
-                                        <div className="addr">{s.delivery?.address}</div>
-                                        <div className="meta">
-                                            👤 {s.customer?.name || 'Unknown'} · {formatDistanceToNow(new Date(s.updatedAt), { addSuffix: true })}
-                                        </div>
-                                        {s.driver?.name && <div className="meta" style={{ marginTop: 4 }}>🚚 {s.driver.name}</div>}
-                                        <div className="actions">
-                                            {s.status === 'pending' && (
-                                                <button className="btn btn-primary btn-sm" onClick={() => setSelected(s)}>Assign Driver</button>
-                                            )}
-                                            {s.status === 'assigned' && (
-                                                <button className="btn btn-ghost btn-sm" onClick={() => unassign(s._id)}>Unassign</button>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* Desktop */}
-                        <div className='table-wrapper desktop-dispatch'>
-                            <table>
-                                <thead><tr>
-                                    <th>Tracking ID</th><th>Customer</th><th>Destination</th>
-                                    <th>Status</th><th>Driver</th><th>Priority</th><th>Updated</th><th>Actions</th>
-                                </tr></thead>
-                                <tbody>
-                                    {filtered.map(s => {
-                                        const meta = STATUS_META[s.status] || { label: s.status, cls: '' };
-                                        const driverName = s.driver?.name;
-                                        return (
-                                            <tr key={s._id}>
-                                                <td><code style={{ fontWeight: 700, color: 'var(--blue)', fontSize: 13 }}>{s.trackingId}</code></td>
-                                                <td>
-                                                    <div style={{ fontSize: 14, fontWeight: 600 }}>{s.customer?.name || '—'}</div>
-                                                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{s.customer?.email}</div>
-                                                </td>
-                                                <td style={{ fontSize: 13, maxWidth: 160 }}>
-                                                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.delivery?.address}</div>
-                                                    {s.delivery?.city && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{s.delivery.city}</div>}
-                                                </td>
-                                                <td><span className={`badge ${meta.cls}`}>{meta.label}</span></td>
-                                                <td style={{ fontSize: 13 }}>
-                                                {driverName ? (
-                                                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <span style={{
-                                                        width: 26, height: 26, borderRadius: '50%',
-                                                        background: 'linear-gradient(135deg, var(--blue), var(--blue-light))',
-                                                        color: '#fff', fontSize: 11, fontWeight: 700,
-                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                    }}>{driverName[0].toUpperCase()}</span>
-                                                    {driverName}
-                                                    </span>
-                                                ) : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>Unassigned</span>}
-                                                </td>
-                                                <td>
-                                                    <span style={{
-                                                        fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
-                                                        background: s.priority === 'urgent' ? 'rgba(239,71,111,0.1)' : s.priority === 'express' ? 'rgba(240,165,0,0.1)' : 'rgba(27,108,168,0.08)',
-                                                        color: s.priority === 'urgent' ? 'var(--danger)' : s.priority === 'express' ? '#b07800' : 'var(--blue)',
-                                                    }}>{s.priority?.toUpperCase()}</span>
-                                                </td>
-                                                <td style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                                                    {formatDistanceToNow(new Date(s.updatedAt), { addSuffix: true })}
-                                                </td>
-                                                <td>
-                                                    <div style={{ display: 'flex', gap: 6 }}>
-                                                        {s.status === 'pending' && (
-                                                        <button className="btn btn-primary btn-sm" onClick={() => setSelected(s)}>Assign</button>
-                                                        )}
-                                                        {s.status === 'assigned' && (
-                                                        <button className="btn btn-ghost btn-sm" onClick={() => unassign(s._id)}>Unassign</button>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                    </tbody>
-                            </table>
-                        </div>
-                    </>
-                )}
-            </div>
-
-            {selected && <AssignModal shipment={selected} drivers={drivers} onClose={() => setSelected(null)} onSuccess={onAssigned} />}
-            {showNew   && <NewShipmentModal onClose={() => setShowNew(false)} onSuccess={onCreated} />}
-
-            <style>{`
-                @media (max-width: 700px) {
-                .mobile-dispatch  { display: block !important; padding-top: 8px; }
-                .desktop-dispatch { display: none; }
-                }
-            `}</style>
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{ maxWidth: 620 }}>
+        <div className="modal-header">
+          <span className="modal-title">📦 New Shipment</span>
+          <button className="modal-close" onClick={onClose}>✕</button>
         </div>
-    );
+        <div className="modal-body">
+          {error && <div className="alert alert-error">{error}</div>}
+          <form onSubmit={submit}>
+
+            {/* Customer */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-secondary)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                👤 Customer
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Search customer</label>
+                <CustomerSearch value={customer} onChange={setCustomer} />
+                <span style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+                  Customer must have a registered account. They can track this shipment after creation.
+                </span>
+              </div>
+            </div>
+
+            {/* Pickup */}
+            <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-secondary)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              📍 Pickup
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Address *</label>
+                <input className="form-control" name="pickupAddress" value={form.pickupAddress} onChange={handle} required placeholder="123 Sender St" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">City</label>
+                <input className="form-control" name="pickupCity" value={form.pickupCity} onChange={handle} placeholder="Colombo" />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Contact name</label>
+                <input className="form-control" name="pickupContactName" value={form.pickupContactName} onChange={handle} placeholder="John Smith" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Contact phone</label>
+                <input className="form-control" name="pickupContactPhone" value={form.pickupContactPhone} onChange={handle} placeholder="+94 77 123 4567" />
+              </div>
+            </div>
+
+            {/* Delivery */}
+            <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-secondary)', marginBottom: 10, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              🏁 Delivery
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Address *</label>
+                <input className="form-control" name="deliveryAddress" value={form.deliveryAddress} onChange={handle} required placeholder="456 Recipient Ave" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">City</label>
+                <input className="form-control" name="deliveryCity" value={form.deliveryCity} onChange={handle} placeholder="Kandy" />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Contact name</label>
+                <input className="form-control" name="deliveryContactName" value={form.deliveryContactName} onChange={handle} placeholder="Jane Doe" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Contact phone</label>
+                <input className="form-control" name="deliveryContactPhone" value={form.deliveryContactPhone} onChange={handle} placeholder="+94 77 987 6543" />
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Special delivery instructions</label>
+              <input className="form-control" name="deliveryInstructions" value={form.deliveryInstructions} onChange={handle} placeholder="e.g. Leave at back door, call on arrival…" />
+            </div>
+
+            {/* Package */}
+            <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-secondary)', marginBottom: 10, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              📦 Package
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Description</label>
+                <input className="form-control" name="description" value={form.description} onChange={handle} placeholder="Electronics, clothing…" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Weight (kg)</label>
+                <input className="form-control" name="weight" type="number" min="0" step="0.1" value={form.weight} onChange={handle} placeholder="1.5" />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Priority</label>
+                <select className="form-control" name="priority" value={form.priority} onChange={handle}>
+                  <option value="standard">Standard</option>
+                  <option value="express">Express</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Scheduled date</label>
+                <input className="form-control" name="scheduledDate" type="date" value={form.scheduledDate} onChange={handle} />
+              </div>
+            </div>
+
+            <div className="modal-footer" style={{ padding: 0, marginTop: 8 }}>
+              <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn btn-primary" disabled={loading || !customer}>
+                {loading ? 'Creating…' : 'Create Shipment'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Assign Modal ─────────────────────────────────────────────────────────────
+function AssignModal({ shipment, drivers, onClose, onSuccess }) {
+  const [driverId, setDriverId] = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!driverId) { setError('Please select a driver.'); return; }
+    setLoading(true); setError('');
+    try {
+      await api.post('/assignments', { shipmentId: shipment._id, driverId });
+      onSuccess();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Assignment failed.');
+    } finally { setLoading(false); }
+  };
+
+  const available = drivers.filter(d => d.isAvailable);
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-header">
+          <span className="modal-title">🚚 Assign Driver</span>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <div style={{ background: 'var(--bg)', borderRadius: 'var(--radius-sm)', padding: '12px 16px', marginBottom: 20 }}>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 2 }}>Shipment</div>
+            <div style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--blue)', fontSize: 16 }}>{shipment?.trackingId}</div>
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+              <div>📍 From: {shipment?.pickup?.address}</div>
+              <div>🏁 To: {shipment?.delivery?.address}</div>
+            </div>
+            {shipment?.customer?.name && (
+              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+                👤 Customer: <strong>{shipment.customer.name}</strong>
+              </div>
+            )}
+          </div>
+
+          {error && <div className="alert alert-error">{error}</div>}
+
+          <form onSubmit={submit}>
+            <div className="form-group">
+              <label className="form-label">Select driver ({available.length} available)</label>
+              {available.length === 0 ? (
+                <div className="alert alert-info">No available drivers right now. Drivers can toggle availability from their dashboard.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {available.map(d => (
+                    <label key={d._id} style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '12px 14px', border: `2px solid ${driverId === d._id ? 'var(--blue)' : 'var(--border)'}`,
+                      borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                      background: driverId === d._id ? 'rgba(27,108,168,0.05)' : 'var(--bg)',
+                      transition: 'all 0.15s',
+                    }}>
+                      <input type="radio" name="driver" value={d._id}
+                        checked={driverId === d._id} onChange={e => setDriverId(e.target.value)}
+                        style={{ accentColor: 'var(--blue)' }} />
+                      <div style={{
+                        width: 36, height: 36, borderRadius: '50%',
+                        background: 'linear-gradient(135deg, var(--blue), var(--blue-light))',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#fff', fontWeight: 700, fontSize: 14, flexShrink: 0,
+                      }}>{d.name?.[0]?.toUpperCase()}</div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{d.name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                          {d.vehicleNumber && `🚚 ${d.vehicleNumber} · `}{d.phone}
+                        </div>
+                      </div>
+                      <div style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--success)', fontWeight: 700 }}>● AVAILABLE</div>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer" style={{ padding: 0, marginTop: 16 }}>
+              <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn btn-primary" disabled={loading || !driverId}>
+                {loading ? 'Assigning…' : 'Assign Driver'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Dashboard ───────────────────────────────────────────────────────────
+export default function DispatcherDashboard() {
+  const [shipments, setShipments]   = useState([]);
+  const [drivers, setDrivers]       = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [selected, setSelected]     = useState(null);
+  const [showNew, setShowNew]       = useState(false);
+  const [filter, setFilter]         = useState('pending');
+  const [driverLocs, setDriverLocs] = useState({});
+  const [toast, setToast]           = useState('');
+  const socketRef = useRef(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [sRes, dRes] = await Promise.all([
+        api.get('/shipments?limit=50'),
+        api.get('/drivers'),
+      ]);
+      setShipments(sRes.data.shipments || []);
+      setDrivers(dRes.data.drivers || []);
+    } catch {}
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+    const socket = io(process.env.REACT_APP_SOCKET_URL || window.location.origin);
+    socketRef.current = socket;
+    socket.emit('join_role', 'dispatcher');
+    socket.on('driver_location_update', data => {
+      setDriverLocs(prev => ({ ...prev, [data.driverId]: { lat: data.lat, lng: data.lng, name: data.driverName } }));
+    });
+    socket.on('delivery_status_changed', () => load());
+    return () => socket.disconnect();
+  }, []);
+
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3500); };
+  const onAssigned = () => { setSelected(null); load(); showToast('✅ Driver assigned successfully.'); };
+  const onCreated  = () => { setShowNew(false); load(); showToast('✅ Shipment created successfully.'); };
+
+  const unassign = async (shipmentId) => {
+    if (!window.confirm('Unassign this driver?')) return;
+    try { await api.delete(`/assignments/${shipmentId}`); load(); showToast('Driver unassigned.'); } catch {}
+  };
+
+  const filters = [
+    { key: 'all',      label: 'All' },
+    { key: 'pending',  label: 'Pending' },
+    { key: 'assigned', label: 'Assigned' },
+    { key: 'active',   label: 'In Transit' },
+    { key: 'done',     label: 'Completed' },
+  ];
+
+  const filtered = shipments.filter(s => {
+    if (filter === 'pending'  && s.status !== 'pending') return false;
+    if (filter === 'assigned' && s.status !== 'assigned') return false;
+    if (filter === 'active'   && !['picked_up','in_transit','out_for_delivery'].includes(s.status)) return false;
+    if (filter === 'done'     && !['delivered','failed','returned'].includes(s.status)) return false;
+    return true;
+  });
+
+  const stats = {
+    pending: shipments.filter(s => s.status === 'pending').length,
+    active:  shipments.filter(s => ['in_transit','out_for_delivery','picked_up'].includes(s.status)).length,
+    done:    shipments.filter(s => s.status === 'delivered').length,
+    drivers: drivers.filter(d => d.isAvailable).length,
+  };
+
+  return (
+    <div className="animate-fadeIn">
+      {toast && (
+        <div className="alert alert-success" style={{ marginBottom: 20, position: 'sticky', top: 0, zIndex: 10 }}>
+          {toast}
+        </div>
+      )}
+
+      {/* Stats */}
+      <div className="stat-grid" style={{ marginBottom: 24 }}>
+        {[
+          { icon: '⏳', label: 'Pending',          value: stats.pending, color: 'amber' },
+          { icon: '🚚', label: 'In Transit',        value: stats.active,  color: 'blue' },
+          { icon: '✅', label: 'Delivered today',   value: stats.done,    color: 'green' },
+          { icon: '👤', label: 'Available drivers', value: stats.drivers, color: 'purple' },
+        ].map(s => (
+          <div key={s.label} className="stat-card">
+            <div className={`stat-icon ${s.color}`} style={{ fontSize: 24 }}>{s.icon}</div>
+            <div><div className="stat-value">{s.value}</div><div className="stat-label">{s.label}</div></div>
+          </div>
+        ))}
+      </div>
+
+      {/* Live drivers */}
+      {Object.keys(driverLocs).length > 0 && (
+        <div className="card card-padded" style={{ marginBottom: 24 }}>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 15, marginBottom: 14 }}>🟢 Drivers Online</h3>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            {Object.entries(driverLocs).map(([id, loc]) => (
+              <div key={id} style={{
+                background: 'rgba(6,214,160,0.07)', border: '1px solid rgba(6,214,160,0.2)',
+                borderRadius: 'var(--radius-sm)', padding: '8px 14px', fontSize: 13,
+              }}>
+                <span style={{ fontWeight: 700 }}>{loc.name || 'Driver'}</span>
+                <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>
+                  GPS: {loc.lat?.toFixed(4)}, {loc.lng?.toFixed(4)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Shipments */}
+      <div className="card">
+        <div className="card-header" style={{ flexWrap: 'wrap', gap: 12 }}>
+          <span className="card-title">Shipments ({filtered.length})</span>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="tabs">
+              {filters.map(f => (
+                <button key={f.key} className={`tab${filter === f.key ? ' active' : ''}`} onClick={() => setFilter(f.key)}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={() => setShowNew(true)}>+ New Shipment</button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="loading-center"><div className="spinner" /></div>
+        ) : filtered.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">📋</div>
+            <div className="empty-title">No shipments</div>
+            <div className="empty-sub">
+              {filter === 'pending' ? 'No pending shipments. Create one with "+ New Shipment".' : 'No shipments match this filter.'}
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Mobile */}
+            <div className="mobile-dispatch" style={{ display: 'none' }}>
+              {filtered.map(s => {
+                const meta = STATUS_META[s.status] || { label: s.status, cls: '' };
+                return (
+                  <div key={s._id} className="delivery-card-mobile" style={{ margin: '0 16px 12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <code style={{ fontWeight: 700, color: 'var(--blue)', fontSize: 14 }}>{s.trackingId}</code>
+                      <span className={`badge ${meta.cls}`}>{meta.label}</span>
+                    </div>
+                    <div className="addr">{s.delivery?.address}</div>
+                    <div className="meta">
+                      👤 {s.customer?.name || 'Unknown'} · {formatDistanceToNow(new Date(s.updatedAt), { addSuffix: true })}
+                    </div>
+                    {s.driver?.name && <div className="meta" style={{ marginTop: 4 }}>🚚 {s.driver.name}</div>}
+                    <div className="actions">
+                      {s.status === 'pending' && (
+                        <button className="btn btn-primary btn-sm" onClick={() => setSelected(s)}>Assign Driver</button>
+                      )}
+                      {s.status === 'assigned' && (
+                        <button className="btn btn-ghost btn-sm" onClick={() => unassign(s._id)}>Unassign</button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop */}
+            <div className="table-wrapper desktop-dispatch">
+              <table>
+                <thead><tr>
+                  <th>Tracking ID</th><th>Customer</th><th>Destination</th>
+                  <th>Status</th><th>Driver</th><th>Priority</th><th>Updated</th><th>Actions</th>
+                </tr></thead>
+                <tbody>
+                  {filtered.map(s => {
+                    const meta = STATUS_META[s.status] || { label: s.status, cls: '' };
+                    const driverName = s.driver?.name;
+                    return (
+                      <tr key={s._id}>
+                        <td><code style={{ fontWeight: 700, color: 'var(--blue)', fontSize: 13 }}>{s.trackingId}</code></td>
+                        <td>
+                          <div style={{ fontSize: 14, fontWeight: 600 }}>{s.customer?.name || '—'}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{s.customer?.email}</div>
+                        </td>
+                        <td style={{ fontSize: 13, maxWidth: 160 }}>
+                          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.delivery?.address}</div>
+                          {s.delivery?.city && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{s.delivery.city}</div>}
+                        </td>
+                        <td><span className={`badge ${meta.cls}`}>{meta.label}</span></td>
+                        <td style={{ fontSize: 13 }}>
+                          {driverName ? (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{
+                                width: 26, height: 26, borderRadius: '50%',
+                                background: 'linear-gradient(135deg, var(--blue), var(--blue-light))',
+                                color: '#fff', fontSize: 11, fontWeight: 700,
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              }}>{driverName[0].toUpperCase()}</span>
+                              {driverName}
+                            </span>
+                          ) : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>Unassigned</span>}
+                        </td>
+                        <td>
+                          <span style={{
+                            fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+                            background: s.priority === 'urgent' ? 'rgba(239,71,111,0.1)' : s.priority === 'express' ? 'rgba(240,165,0,0.1)' : 'rgba(27,108,168,0.08)',
+                            color: s.priority === 'urgent' ? 'var(--danger)' : s.priority === 'express' ? '#b07800' : 'var(--blue)',
+                          }}>{s.priority?.toUpperCase()}</span>
+                        </td>
+                        <td style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                          {formatDistanceToNow(new Date(s.updatedAt), { addSuffix: true })}
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            {s.status === 'pending' && (
+                              <button className="btn btn-primary btn-sm" onClick={() => setSelected(s)}>Assign</button>
+                            )}
+                            {s.status === 'assigned' && (
+                              <button className="btn btn-ghost btn-sm" onClick={() => unassign(s._id)}>Unassign</button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
+
+      {selected && <AssignModal shipment={selected} drivers={drivers} onClose={() => setSelected(null)} onSuccess={onAssigned} />}
+      {showNew   && <NewShipmentModal onClose={() => setShowNew(false)} onSuccess={onCreated} />}
+
+      <style>{`
+        @media (max-width: 700px) {
+          .mobile-dispatch  { display: block !important; padding-top: 8px; }
+          .desktop-dispatch { display: none; }
+        }
+      `}</style>
+    </div>
+  );
 }

@@ -91,19 +91,19 @@ export default function CustomerDashboard() {
                             <thead><tr><th>Tracking ID</th><th>Destination</th><th>Status</th><th>Updated</th><th></th></tr></thead>
                             <tbody>
                                 {shipments.slice(0,8).map(s => {
-                                const meta = STATUS_META[s.status] || { label: s.status, cls: '' };
-                                return (
-                                    <tr key={s._id}>
-                                    <td><code style={{ fontSize:13, fontWeight:700, color:'var(--blue)', background:'rgba(27,108,168,0.08)', padding:'2px 8px', borderRadius:6 }}>{s.trackingId}</code></td>
-                                    <td style={{ maxWidth:180 }}>
-                                        <div style={{ fontSize:14, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.delivery?.address}</div>
-                                        <div style={{ fontSize:12, color:'var(--text-muted)' }}>{s.delivery?.city}</div>
-                                    </td>
-                                    <td><span className={`badge ${meta.cls}`}>{meta.label}</span></td>
-                                    <td style={{ fontSize:12, color:'var(--text-muted)', whiteSpace:'nowrap' }}>{formatDistanceToNow(new Date(s.updatedAt), { addSuffix:true })}</td>
-                                    <td><Link to={`/customer/track?id=${s.trackingId}`} className="btn btn-ghost btn-sm">Track →</Link></td>
-                                    </tr>
-                                );
+                                    const meta = STATUS_META[s.status] || { label: s.status, cls: '' };
+                                    return (
+                                        <tr key={s._id}>
+                                            <td><code style={{ fontSize:13, fontWeight:700, color:'var(--blue)', background:'rgba(27,108,168,0.08)', padding:'2px 8px', borderRadius:6 }}>{s.trackingId}</code></td>
+                                            <td style={{ maxWidth:180 }}>
+                                                <div style={{ fontSize:14, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.delivery?.address}</div>
+                                                <div style={{ fontSize:12, color:'var(--text-muted)' }}>{s.delivery?.city}</div>
+                                            </td>
+                                            <td><span className={`badge ${meta.cls}`}>{meta.label}</span></td>
+                                            <td style={{ fontSize:12, color:'var(--text-muted)', whiteSpace:'nowrap' }}>{formatDistanceToNow(new Date(s.updatedAt), { addSuffix:true })}</td>
+                                            <td><Link to={`/customer/track?id=${s.trackingId}`} className="btn btn-ghost btn-sm">Track →</Link></td>
+                                        </tr>
+                                    );
                                 })}
                             </tbody>
                         </table>
@@ -111,5 +111,5 @@ export default function CustomerDashboard() {
                 )}
             </div>
         </div>
-    )
+    );
 }

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Topbar from "./Topbar";
 import Sidebar from "./Sidebar";
-// Side bar and top bar
 
 export default function AppShell() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
